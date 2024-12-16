@@ -12,25 +12,24 @@ st.write("Scan a barcode using your USB scanner and see the results below.")
 if "scanned_barcodes" not in st.session_state:
     st.session_state.scanned_barcodes = []
 
-# Input field to capture barcode data
-barcode = st.text_input("Scan your barcode here:", key="temp_barcode_input")
+# Temporary variable to store barcode input
+barcode = st.text_input("Scan your barcode here:")
 
 if barcode:
     # Check if the barcode has already been scanned
     if barcode not in [data["barcode"] for data in st.session_state.scanned_barcodes]:
         # Record the scanned barcode with a timestamp
         scanned_data = {
-            "barcode": barcode,
-            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            "barcode": barcode.strip(),
+            "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         }
         st.session_state.scanned_barcodes.append(scanned_data)
 
         # Display a success message
         st.success(f"Scanned barcode: {barcode}")
 
-        # Clear the input field by using a temporary key and rerunning the app
-        st.session_state.temp_barcode_input = ""  # Clear the temporary key
-        st.experimental_rerun()  # Refresh the app
+        # Trigger a rerun to clear the input field
+        st.experimental_set_query_params(reset="true")
     else:
         st.warning("You have already scanned this barcode.")
 
@@ -43,7 +42,6 @@ if st.session_state.scanned_barcodes:
 # Provide an option to clear the scanned data
 if st.button("Clear Scanned Barcodes"):
     st.session_state.scanned_barcodes = []
-    st.success("Scanned barcodes cleared!")
     st.experimental_rerun()  # Trigger rerun to reset the state
 
 # Footer
