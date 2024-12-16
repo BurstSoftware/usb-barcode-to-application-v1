@@ -29,7 +29,8 @@ if barcode:
         st.success(f"Scanned barcode: {barcode}")
 
         # Clear the input field after successful scan
-        st.session_state.barcode_input = ""
+        if "barcode_input" in st.session_state:
+            st.session_state.barcode_input = ""
     else:
         st.warning("You have already scanned this barcode.")
 
