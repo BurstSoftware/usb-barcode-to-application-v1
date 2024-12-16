@@ -29,7 +29,7 @@ if barcode:
         st.success(f"Scanned barcode: {barcode}")
 
         # Clear the input field after successful scan
-        st.experimental_set_query_params(barcode_input="")
+        st.session_state.barcode_input = ""
     else:
         st.warning("You have already scanned this barcode.")
 
@@ -42,6 +42,7 @@ if st.session_state.scanned_barcodes:
 # Provide an option to clear the scanned data
 if st.button("Clear Scanned Barcodes"):
     st.session_state.scanned_barcodes = []
+    st.session_state.barcode_input = ""
     st.success("Scanned barcodes cleared!")
 
 # Footer
