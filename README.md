@@ -54,11 +54,14 @@ After scanning barcodes, the app will display:
 
 yaml
 Copy code
+
 Scanned Barcodes
 1. Barcode: 123456789 (Scanned at: 2024-06-16 12:00:00)
 2. Barcode: 123456789 (Scanned at: 2024-06-16 12:00:05)
 3. Barcode: 987654321 (Scanned at: 2024-06-16 12:01:10)
+
 Code Overview
+
 Session State: Used to persist scanned barcodes and reset the input field.
 Text Input Reset: Implemented using a unique key (input_key) and st.experimental_rerun() to clear the input field.
 Dynamic UI: Displays scanned barcodes dynamically and timestamps them.
