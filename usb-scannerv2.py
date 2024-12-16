@@ -11,11 +11,9 @@ st.write("Scan a barcode using your USB scanner and see the results below.")
 # Initialize session state
 if "scanned_barcodes" not in st.session_state:
     st.session_state.scanned_barcodes = []
-if "barcode_input" not in st.session_state:
-    st.session_state.barcode_input = ""
 
 # Input field to capture barcode data
-barcode = st.text_input("Scan your barcode here:", key="barcode_input")
+barcode = st.text_input("Scan your barcode here:", key="temp_barcode_input")
 
 if barcode:
     # Check if the barcode has already been scanned
@@ -30,9 +28,9 @@ if barcode:
         # Display a success message
         st.success(f"Scanned barcode: {barcode}")
 
-        # Clear the input field after successful scan
-        st.session_state.barcode_input = ""  # Reset session state value
-        st.experimental_rerun()  # Trigger rerun to clear input field
+        # Clear the input field by using a temporary key and rerunning the app
+        st.session_state.temp_barcode_input = ""  # Clear the temporary key
+        st.experimental_rerun()  # Refresh the app
     else:
         st.warning("You have already scanned this barcode.")
 
