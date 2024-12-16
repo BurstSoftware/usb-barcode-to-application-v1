@@ -13,7 +13,7 @@ if "scanned_barcodes" not in st.session_state:
     st.session_state.scanned_barcodes = []
 
 # Input field to capture barcode data
-barcode = st.text_input("Scan your barcode here:", "", key="barcode_input")
+barcode = st.text_input("Scan your barcode here:", key="barcode_input")
 
 if barcode:
     # Check if the barcode has already been scanned
@@ -30,6 +30,7 @@ if barcode:
 
         # Clear the input field after successful scan
         st.session_state.barcode_input = ""
+        st.experimental_rerun()  # Refresh the app to reflect the cleared input
     else:
         st.warning("You have already scanned this barcode.")
 
@@ -42,8 +43,8 @@ if st.session_state.scanned_barcodes:
 # Provide an option to clear the scanned data
 if st.button("Clear Scanned Barcodes"):
     st.session_state.scanned_barcodes = []
-    st.session_state.barcode_input = ""
     st.success("Scanned barcodes cleared!")
+    st.experimental_rerun()  # Refresh the app to reset the state
 
 # Footer
 st.markdown("---")
