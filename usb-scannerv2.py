@@ -12,8 +12,11 @@ st.write("Scan a barcode using your USB scanner and see the results below.")
 if "scanned_barcodes" not in st.session_state:
     st.session_state.scanned_barcodes = []
 
+if "input_key" not in st.session_state:
+    st.session_state.input_key = 0  # Unique key for text input to reset it
+
 # Temporary variable to store barcode input
-barcode = st.text_input("Scan your barcode here:")
+barcode = st.text_input("Scan your barcode here:", key=f"barcode_input_{st.session_state.input_key}")
 
 if barcode:
     # Check if the barcode has already been scanned
@@ -28,8 +31,9 @@ if barcode:
         # Display a success message
         st.success(f"Scanned barcode: {barcode}")
 
-        # Trigger a rerun to clear the input field
-        st.experimental_set_query_params(reset="true")
+        # Increment the input key to reset the text input field
+        st.session_state.input_key += 1
+        st.experimental_rerun()  # Trigger rerun to reset input field
     else:
         st.warning("You have already scanned this barcode.")
 
@@ -42,6 +46,7 @@ if st.session_state.scanned_barcodes:
 # Provide an option to clear the scanned data
 if st.button("Clear Scanned Barcodes"):
     st.session_state.scanned_barcodes = []
+    st.session_state.input_key += 1  # Reset the input field key
     st.experimental_rerun()  # Trigger rerun to reset the state
 
 # Footer
