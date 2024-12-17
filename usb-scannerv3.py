@@ -12,18 +12,27 @@ st.write("Scan a barcode using your USB scanner and see the results below.")
 if "scanned_barcodes" not in st.session_state:
     st.session_state.scanned_barcodes = []
 
-# Text input for barcode with autofocus
+if "input_key" not in st.session_state:
+    st.session_state.input_key = 0  # Unique key for text input to reset it
+
+# JavaScript to keep the focus on the text input field
+focus_script = """
+    <script>
+        // Automatically focus on the input field when the page is loaded or rerun
+        document.getElementById("barcode_input").focus();
+    </script>
+"""
+
+# Temporary variable to store barcode input
 barcode = st.text_input(
     "Scan your barcode here:",
-    value="",  # Empty input field
-    key="barcode_input",
-    placeholder="Waiting for barcode...",
-    label_visibility="visible",
-    help="Focus remains here for next scan.",
-    max_chars=100,
-    type="default",
-    autofocus=True,  # Ensures the cursor focuses on this field
+    key=f"barcode_input_{st.session_state.input_key}",
+    label_visibility="hidden",  # Hides the label to prevent duplication
+    placeholder="Scan your barcode here...",
 )
+
+# Inject JavaScript for autofocus
+st.markdown(focus_script, unsafe_allow_html=True)
 
 if barcode:
     # Record the scanned barcode with a timestamp (no duplicate check)
@@ -36,8 +45,9 @@ if barcode:
     # Display a success message
     st.success(f"Scanned barcode: {barcode}")
 
-    # Clear the input field by resetting the text_input value
-    st.experimental_set_query_params(barcode_input="")  # Query param hack to clear the field
+    # Increment the input key to reset the text input field
+    st.session_state.input_key += 1
+    st.experimental_rerun()  # Trigger rerun to reset input field
 
 # Display the scanned barcodes
 if st.session_state.scanned_barcodes:
@@ -48,7 +58,7 @@ if st.session_state.scanned_barcodes:
 # Provide an option to clear the scanned data
 if st.button("Clear Scanned Barcodes"):
     st.session_state.scanned_barcodes = []
-    st.experimental_set_query_params(barcode_input="")  # Query param hack
+    st.session_state.input_key += 1  # Reset the input field key
     st.experimental_rerun()  # Trigger rerun to reset the state
 
 # Footer
