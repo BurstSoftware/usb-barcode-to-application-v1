@@ -15,7 +15,7 @@ if "scanned_barcodes" not in st.session_state:
 if "input_key" not in st.session_state:
     st.session_state.input_key = 0  # Unique key for text input to reset it
 
-# JavaScript to keep the focus on the text input field
+# JavaScript to maintain focus on the barcode input field
 focus_script = """
     <script>
         // Automatically focus on the input field when the page is loaded or rerun
@@ -26,14 +26,15 @@ focus_script = """
     </script>
 """
 
-# Temporary variable to store barcode input
+# Barcode input field
 barcode = st.text_input(
     "Scan your barcode here:",
     key=f"barcode_input_{st.session_state.input_key}",
     placeholder="Scan your barcode here...",
+    label_visibility="hidden",  # Optional: hide label to reduce redundancy
 )
 
-# Inject JavaScript for autofocus
+# Inject JavaScript to maintain focus
 st.markdown(focus_script, unsafe_allow_html=True)
 
 if barcode:
@@ -57,7 +58,7 @@ if st.session_state.scanned_barcodes:
     for i, data in enumerate(st.session_state.scanned_barcodes, start=1):
         st.write(f"**{i}. Barcode:** {data['barcode']} (Scanned at: {data['timestamp']})")
 
-# Provide an option to clear the scanned data
+# Button to clear scanned data
 if st.button("Clear Scanned Barcodes"):
     st.session_state.scanned_barcodes = []
     st.session_state.input_key += 1  # Reset the input field key
