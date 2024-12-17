@@ -8,7 +8,7 @@ st.set_page_config(page_title="USB Barcode Scanner App", layout="centered")
 st.title("USB Barcode Scanner Application")
 st.write("Scan a barcode using your USB scanner and see the results below.")
 
-# Initialize session state
+# Initialize session state variables
 if "scanned_barcodes" not in st.session_state:
     st.session_state.scanned_barcodes = []
 
@@ -19,7 +19,10 @@ if "input_key" not in st.session_state:
 focus_script = """
     <script>
         // Automatically focus on the input field when the page is loaded or rerun
-        document.getElementById("barcode_input").focus();
+        const inputField = document.getElementById("barcode_input");
+        if (inputField) {
+            inputField.focus();
+        }
     </script>
 """
 
@@ -27,7 +30,6 @@ focus_script = """
 barcode = st.text_input(
     "Scan your barcode here:",
     key=f"barcode_input_{st.session_state.input_key}",
-    label_visibility="hidden",  # Hides the label to prevent duplication
     placeholder="Scan your barcode here...",
 )
 
@@ -35,7 +37,7 @@ barcode = st.text_input(
 st.markdown(focus_script, unsafe_allow_html=True)
 
 if barcode:
-    # Record the scanned barcode with a timestamp (no duplicate check)
+    # Record the scanned barcode with a timestamp
     scanned_data = {
         "barcode": barcode.strip(),
         "timestamp": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
