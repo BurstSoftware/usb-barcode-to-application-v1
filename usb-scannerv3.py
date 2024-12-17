@@ -22,6 +22,9 @@ focus_script = """
         const inputField = document.getElementById("barcode_input");
         if (inputField) {
             inputField.focus();
+            inputField.addEventListener("blur", () => {
+                inputField.focus(); // Refocus if the input field loses focus
+            });
         }
     </script>
 """
