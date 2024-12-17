@@ -12,13 +12,11 @@ st.write("Scan a barcode using your USB scanner and see the results below.")
 if "scanned_barcodes" not in st.session_state:
     st.session_state.scanned_barcodes = []
 
-if "input_key" not in st.session_state:
-    st.session_state.input_key = 0  # Unique key for text input to reset it
-
-# JavaScript to maintain focus on the barcode input field
+# JavaScript to maintain focus and clear the input field dynamically
 focus_script = """
-    <script>
-        // Automatically focus on the input field when the page is loaded or rerun
+<script>
+    // Ensure the input field remains focused
+    function maintainFocus() {
         const inputField = document.getElementById("barcode_input");
         if (inputField) {
             inputField.focus();
@@ -26,18 +24,34 @@ focus_script = """
                 inputField.focus(); // Refocus if the input field loses focus
             });
         }
-    </script>
+    }
+
+    // Clear the input field after a scan
+    function clearInput() {
+        const inputField = document.getElementById("barcode_input");
+        if (inputField) {
+            inputField.value = ""; // Clear input value
+        }
+    }
+
+    // Run focus maintenance on page load
+    document.addEventListener("DOMContentLoaded", maintainFocus);
+    maintainFocus();
+
+    // Expose the clearInput function globally for Streamlit
+    window.clearInput = clearInput;
+</script>
 """
 
 # Barcode input field
 barcode = st.text_input(
     "Scan your barcode here:",
-    key=f"barcode_input_{st.session_state.input_key}",
+    key="barcode_input",
     placeholder="Scan your barcode here...",
     label_visibility="hidden",  # Optional: hide label to reduce redundancy
 )
 
-# Inject JavaScript to maintain focus
+# Inject JavaScript for focus management and input clearing
 st.markdown(focus_script, unsafe_allow_html=True)
 
 if barcode:
@@ -51,9 +65,11 @@ if barcode:
     # Display a success message
     st.success(f"Scanned barcode: {barcode}")
 
-    # Increment the input key to reset the text input field
-    st.session_state.input_key += 1
-    st.experimental_rerun()  # Trigger rerun to reset input field
+    # Clear the input field via JavaScript
+    st.markdown(
+        """<script>clearInput();</script>""",
+        unsafe_allow_html=True,
+    )
 
 # Display the scanned barcodes
 if st.session_state.scanned_barcodes:
@@ -64,7 +80,6 @@ if st.session_state.scanned_barcodes:
 # Button to clear scanned data
 if st.button("Clear Scanned Barcodes"):
     st.session_state.scanned_barcodes = []
-    st.session_state.input_key += 1  # Reset the input field key
     st.experimental_rerun()  # Trigger rerun to reset the state
 
 # Footer
