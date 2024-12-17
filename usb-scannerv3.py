@@ -12,13 +12,12 @@ st.write("Scan a barcode using your USB scanner and see the results below.")
 if "scanned_barcodes" not in st.session_state:
     st.session_state.scanned_barcodes = []
 
-if "input_key" not in st.session_state:
-    st.session_state.input_key = 0  # Unique key for text input to reset it
+if "current_barcode" not in st.session_state:
+    st.session_state.current_barcode = ""  # Keep the current barcode value in session state
 
 # JavaScript to maintain focus on the barcode input field
 focus_script = """
     <script>
-        // Automatically focus on the input field when the page is loaded or rerun
         const inputField = document.getElementById("barcode_input");
         if (inputField) {
             inputField.focus();
@@ -32,7 +31,8 @@ focus_script = """
 # Barcode input field
 barcode = st.text_input(
     "Scan your barcode here:",
-    key=f"barcode_input_{st.session_state.input_key}",
+    value=st.session_state.current_barcode,
+    key="barcode_input",
     placeholder="Scan your barcode here...",
     label_visibility="hidden",  # Optional: hide label to reduce redundancy
 )
@@ -40,7 +40,8 @@ barcode = st.text_input(
 # Inject JavaScript to maintain focus
 st.markdown(focus_script, unsafe_allow_html=True)
 
-if barcode:
+# When a barcode is entered
+if barcode and barcode != st.session_state.current_barcode:
     # Record the scanned barcode with a timestamp
     scanned_data = {
         "barcode": barcode.strip(),
@@ -51,9 +52,8 @@ if barcode:
     # Display a success message
     st.success(f"Scanned barcode: {barcode}")
 
-    # Increment the input key to reset the text input field
-    st.session_state.input_key += 1
-    st.experimental_rerun()  # Trigger rerun to reset input field
+    # Save the new barcode in session state
+    st.session_state.current_barcode = barcode
 
 # Display the scanned barcodes
 if st.session_state.scanned_barcodes:
@@ -64,7 +64,7 @@ if st.session_state.scanned_barcodes:
 # Button to clear scanned data
 if st.button("Clear Scanned Barcodes"):
     st.session_state.scanned_barcodes = []
-    st.session_state.input_key += 1  # Reset the input field key
+    st.session_state.current_barcode = ""  # Reset the barcode input value
     st.experimental_rerun()  # Trigger rerun to reset the state
 
 # Footer
