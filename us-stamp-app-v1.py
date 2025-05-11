@@ -114,7 +114,7 @@ if page == "Create Stamp":
                     'design': design,
                     'text': text,
                     'color': color,
-                    'value': value  # Fixed typo: changed 'value象' to 'value'
+                    'value': value
                 }
                 st.session_state.stamp_stage = "preview"
                 st.write("Preview your stamp design below. Submit again to confirm.")
@@ -246,9 +246,7 @@ elif page == "History":
             st.write(f"**Quantity**: {order['quantity']} stamps")
             st.write(f"**Total Cost**: ${order['total_cost']:.2f}")
             st.write(f"**Shipping Address**: {order['shipping_address']}")
-            st.write(f"
-
-**Date**: {order['date']}")
+            st.write(f"**Date**: {order['date']}")
             if stamp_data:
                 st.image(stamp_data['path'], caption=f"Stamp: {stamp_data['text']}", width=100)
             else:
