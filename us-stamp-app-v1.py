@@ -1,37 +1,59 @@
 import streamlit as st
 import os
-from PIL import Image, ImageDraw, ImageFont
+import json
 import uuid
 import datetime
+from PIL import Image, ImageDraw, ImageFont
 
 # Set page configuration
 st.set_page_config(page_title="USPS Stamp App", page_icon="📬", layout="wide")
 
-# Initialize session state for user data
+# Directories for stamps and data
+STAMP_DIR = "stamps"
+DATA_FILE = "data.json"
+os.makedirs(STAMP_DIR, exist_ok=True)
+
+# Function to load data from JSON file
+def load_data():
+    try:
+        if os.path.exists(DATA_FILE):
+            with open(DATA_FILE, 'r') as f:
+                return json.load(f)
+        return {'stamps': [], 'mail_history': [], 'orders': []}
+    except Exception as e:
+        st.error(f"Error loading data: {e}")
+        return {'stamps': [], 'mail_history': [], 'orders': []}
+
+# Function to save data to JSON file
+def save_data(data):
+    try:
+        with open(DATA_FILE, 'w') as f:
+            json.dump(data, f, indent=4)
+    except Exception as e:
+        st.error(f"Error saving data: {e}")
+
+# Initialize session state and load persisted data
 if 'user_id' not in st.session_state:
     st.session_state.user_id = str(uuid.uuid4())
-if 'stamps' not in st.session_state:
-    st.session_state.stamps = []
-if 'mail_history' not in st.session_state:
-    st.session_state.mail_history = []
-if 'orders' not in st.session_state:
-    st.session_state.orders = []
 if 'stamp_stage' not in st.session_state:
     st.session_state.stamp_stage = "input"  # Stages: input, preview, confirmed
 if 'pending_stamp' not in st.session_state:
     st.session_state.pending_stamp = None
 
-# Directory to save stamp designs
-STAMP_DIR = "stamps"
-os.makedirs(STAMP_DIR, exist_ok=True)
+# Load data into session state
+data = load_data()
+if 'stamps' not in st.session_state:
+    st.session_state.stamps = data.get('stamps', [])
+if 'mail_history' not in st.session_state:
+    st.session_state.mail_history = data.get('mail_history', [])
+if 'orders' not in st.session_state:
+    st.session_state.orders = data.get('orders', [])
 
 # Function to create a stamp design
 def create_stamp(design, text, color, value):
-    # Create a blank image
     img = Image.new('RGB', (200, 200), color='white')
     draw = ImageDraw.Draw(img)
     
-    # Draw border based on design
     if design == "Classic":
         draw.rectangle((10, 10, 190, 190), outline=color, width=5)
     elif design == "Wavy":
@@ -42,7 +64,6 @@ def create_stamp(design, text, color, value):
         draw.polygon([(100, 20), (120, 80), (180, 80), (130, 120), (150, 180), 
                       (100, 140), (50, 180), (70, 120), (20, 80), (80, 80)], outline=color, width=5)
     
-    # Add text (stamp value and custom text)
     try:
         font = ImageFont.truetype("arial.ttf", 20)
     except:
@@ -51,7 +72,6 @@ def create_stamp(design, text, color, value):
     draw.text((20, 160), f"USPS ${value:.2f}", fill=color, font=font)
     draw.text((20, 20), text.upper(), fill=color, font=font)
     
-    # Save stamp design
     stamp_id = str(uuid.uuid4())
     stamp_path = os.path.join(STAMP_DIR, f"{stamp_id}.png")
     img.save(stamp_path)
@@ -67,6 +87,11 @@ def send_mail(stamp_id, recipient, address):
         'date': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     }
     st.session_state.mail_history.append(mail_entry)
+    save_data({
+        'stamps': st.session_state.stamps,
+        'mail_history': st.session_state.mail_history,
+        'orders': st.session_state.orders
+    })
 
 # Function to place an order for physical stamps
 def place_order(stamp_id, quantity, shipping_address):
@@ -82,6 +107,11 @@ def place_order(stamp_id, quantity, shipping_address):
             'date': datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         }
         st.session_state.orders.append(order_entry)
+        save_data({
+            'stamps': st.session_state.stamps,
+            'mail_history': st.session_state.mail_history,
+            'orders': st.session_state.orders
+        })
         return total_cost
     return 0
 
@@ -101,7 +131,6 @@ if page == "Create Stamp":
         color = st.color_picker("Stamp Color", "#0000FF", key="color_picker")
         value = st.number_input("Stamp Value ($)", min_value=0.01, max_value=10.00, step=0.01, value=0.55, key="value_input")
         
-        # Button label changes based on stage
         button_label = "Preview Stamp Design" if st.session_state.stamp_stage == "input" else "Confirm Design"
         submitted = st.form_submit_button(button_label)
         
@@ -109,7 +138,6 @@ if page == "Create Stamp":
             if text.strip() == "":
                 st.error("Please enter custom text.")
             elif st.session_state.stamp_stage == "input":
-                # Move to preview stage
                 st.session_state.pending_stamp = {
                     'design': design,
                     'text': text,
@@ -118,16 +146,12 @@ if page == "Create Stamp":
                 }
                 st.session_state.stamp_stage = "preview"
                 st.write("Preview your stamp design below. Submit again to confirm.")
-                # Create a temporary stamp for preview
                 temp_stamp_id, temp_stamp_path = create_stamp(design, text, color, value)
                 st.image(temp_stamp_path, caption=f"Preview: {text} (${value:.2f})", width=200)
-                # Clean up temporary file
                 os.remove(temp_stamp_path)
             elif st.session_state.stamp_stage == "preview":
-                # Move to confirmed stage
                 st.session_state.stamp_stage = "confirmed"
         
-        # Process confirmed design
         if st.session_state.stamp_stage == "confirmed" and st.session_state.pending_stamp:
             stamp_id, stamp_path = create_stamp(
                 st.session_state.pending_stamp['design'],
@@ -142,9 +166,13 @@ if page == "Create Stamp":
                 'text': st.session_state.pending_stamp['text'],
                 'value': st.session_state.pending_stamp['value']
             })
+            save_data({
+                'stamps': st.session_state.stamps,
+                'mail_history': st.session_state.mail_history,
+                'orders': st.session_state.orders
+            })
             st.success("Stamp design created successfully!")
             st.image(stamp_path, caption=f"Stamp: {st.session_state.pending_stamp['text']} (${st.session_state.pending_stamp['value']:.2f})", width=200)
-            # Reset state
             st.session_state.stamp_stage = "input"
             st.session_state.pending_stamp = None
 
@@ -161,6 +189,11 @@ elif page == "My Collection":
                 if st.button("Delete", key=f"delete_{stamp['id']}"):
                     os.remove(stamp['path'])
                     st.session_state.stamps = [s for s in st.session_state.stamps if s['id'] != stamp['id']]
+                    save_data({
+                        'stamps': st.session_state.stamps,
+                        'mail_history': st.session_state.mail_history,
+                        'orders': st.session_state.orders
+                    })
                     st.experimental_rerun()
 
 # Page 3: Send Virtual Mail
@@ -183,11 +216,15 @@ elif page == "Send Virtual Mail":
                 else:
                     send_mail(stamp[1], recipient, address)
                     st.success("Virtual mail sent successfully!")
-                    # Optionally remove stamp after use
                     if st.checkbox("Remove stamp after sending"):
                         stamp_data = next(s for s in st.session_state.stamps if s['id'] == stamp[1])
                         os.remove(stamp_data['path'])
                         st.session_state.stamps = [s for s in st.session_state.stamps if s['id'] != stamp[1]]
+                        save_data({
+                            'stamps': st.session_state.stamps,
+                            'mail_history': st.session_state.mail_history,
+                            'orders': st.session_state.orders
+                        })
 
 # Page 4: Order Physical Stamps
 elif page == "Order Physical Stamps":
