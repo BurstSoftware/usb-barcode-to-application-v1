@@ -16,6 +16,10 @@ if 'mail_history' not in st.session_state:
     st.session_state.mail_history = []
 if 'orders' not in st.session_state:
     st.session_state.orders = []
+if 'design_confirmed' not in st.session_state:
+    st.session_state.design_confirmed = False
+if 'pending_stamp' not in st.session_state:
+    st.session_state.pending_stamp = None
 
 # Directory to save stamp designs
 STAMP_DIR = "stamps"
@@ -91,30 +95,55 @@ page = st.sidebar.selectbox("Choose a page", ["Create Stamp", "My Collection", "
 # Page 1: Create Stamp
 if page == "Create Stamp":
     st.header("Create Your Custom Stamp Design")
-    with st.form("stamp_form"):
-        design = st.selectbox("Stamp Design", ["Classic", "Wavy", "Star"])
-        text = st.text_input("Custom Text (e.g., Forever Stamp)", max_chars=20)
-        color = st.color_picker("Stamp Color", "#0000FF")
-        value = st.number_input("Stamp Value ($)", min_value=0.01, max_value=10.00, step=0.01, value=0.55)
-        submitted = st.form_submit_button("Create Stamp Design")
+    with st.form("stamp_form", clear_on_submit=False):
+        design = st.selectbox("Stamp Design", ["Classic", "Wavy", "Star"], key="design_select")
+        text = st.text_input("Custom Text (e.g., Forever Stamp)", max_chars=20, key="text_input")
+        color = st.color_picker("Stamp Color", "#0000FF", key="color_picker")
+        value = st.number_input("Stamp Value ($)", min_value=0.01, max_value=10.00, step=0.01, value=0.55, key="value_input")
+        submitted = st.form_submit_button("Preview Stamp Design")
         
         if submitted:
             if text.strip() == "":
                 st.error("Please enter custom text.")
             else:
-                # Simulate design approval/payment
-                st.write("Submitting design for USPS approval...")
-                if st.button("Confirm Design"):
-                    stamp_id, stamp_path = create_stamp(design, text, color, value)
-                    st.session_state.stamps.append({
-                        'id': stamp_id,
-                        'path': stamp_path,
-                        'design': design,
-                        'text': text,
-                        'value': value
-                    })
-                    st.success("Stamp design created successfully!")
-                    st.image(stamp_path, caption=f"Stamp: {text} (${value:.2f})", width=200)
+                # Store pending stamp data
+                st.session_state.pending_stamp = {
+                    'design': design,
+                    'text': text,
+                    'color': color,
+                    'value': value
+                }
+                st.write("Preview your stamp design below. Confirm to submit for USPS approval.")
+                # Create a temporary stamp for preview
+                temp_stamp_id, temp_stamp_path = create_stamp(design, text, color, value)
+                st.image(temp_stamp_path, caption=f"Preview: {text} (${value:.2f})", width=200)
+                # Clean up temporary file
+                os.remove(temp_stamp_path)
+                
+                # Confirm button within form
+                if st.form_submit_button("Confirm Design", key="confirm_design"):
+                    st.session_state.design_confirmed = True
+        
+        # Process confirmed design
+        if st.session_state.design_confirmed and st.session_state.pending_stamp:
+            stamp_id, stamp_path = create_stamp(
+                st.session_state.pending_stamp['design'],
+                st.session_state.pending_stamp['text'],
+                st.session_state.pending_stamp['color'],
+                st.session_state.pending_stamp['value']
+            )
+            st.session_state.stamps.append({
+                'id': stamp_id,
+                'path': stamp_path,
+                'design': st.session_state.pending_stamp['design'],
+                'text': st.session_state.pending_stamp['text'],
+                'value': st.session_state.pending_stamp['value']
+            })
+            st.success("Stamp design created successfully!")
+            st.image(stamp_path, caption=f"Stamp: {st.session_state.pending_stamp['text']} (${st.session_state.pending_stamp['value']:.2f})", width=200)
+            # Reset state
+            st.session_state.design_confirmed = False
+            st.session_state.pending_stamp = None
 
 # Page 2: My Collection
 elif page == "My Collection":
@@ -179,7 +208,7 @@ elif page == "Order Physical Stamps":
                     if total_cost > 0:
                         stamp_data = next(s for s in st.session_state.stamps if s['id'] == stamp[1])
                         st.write(f"Total Cost: ${total_cost:.2f} for {quantity} stamps")
-                        if st.button("Confirm Payment"):
+                        if st.button("Confirm Payment", key=f"confirm_payment_{stamp[1]}"):
                             st.success(f"Order placed for {quantity} stamps! Check 'History' for details.")
                     else:
                         st.error("Error processing order. Try again.")
